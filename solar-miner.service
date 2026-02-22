@@ -1,0 +1,27 @@
+[Unit]
+Description=Solar Miner Controller
+After=network.target modbus-sniffer.service
+Wants=modbus-sniffer.service
+
+[Service]
+Type=simple
+User=jstormes
+WorkingDirectory=/home/jstormes/solar1
+ExecStart=/usr/local/bin/node index.js
+Restart=always
+RestartSec=10
+
+# REQUIRED — set the miner password
+Environment=MINER_PASSWORD=changeme
+
+# Optional env var overrides — uncomment and edit as needed
+# Environment=BATTERY_JSON=/tmp/battery_data.json
+# Environment=MINER_HOSTS=miner1,miner2
+# Environment=MINER_POWER_TARGET_W=800
+# Environment=MINER_MAX_POWER_TARGET_W=1200
+# Environment=START_MINING_SOC=95
+# Environment=STOP_MINING_SOC=92
+# Environment=POLL_INTERVAL_MS=30000
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=Modbus RS485 Battery Sniffer
+After=dev-ttyUSB0.device
+Wants=dev-ttyUSB0.device
+
+[Service]
+Type=simple
+ExecStart=/home/jstormes/solar1/sniffer/modbus_sniffer -s /dev/ttyUSB0 -o /tmp/battery_data.json
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

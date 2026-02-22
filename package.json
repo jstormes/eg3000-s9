@@ -1,0 +1,12 @@
+{
+  "name": "solar1",
+  "version": "1.0.0",
+  "description": "Solar miner controller — monitors EG3000 battery SOC and controls L3+ miners",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "private": true,
+  "dependencies": {}
+}
