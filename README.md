@@ -83,9 +83,11 @@ Expected output:
 
 ## Configuration
 
-All settings are controlled via environment variables with sensible defaults. To override, either:
+All settings are controlled via environment variables with sensible defaults. Site-specific configuration (passwords, hostnames) is stored in `/etc/solar-miner.env` on the Pi, which is **not in the repo** and persists across deploys.
 
-- Edit the systemd service file (`/etc/systemd/system/solar-miner.service`), uncomment and change the `Environment=` lines, then `sudo systemctl daemon-reload && sudo systemctl restart solar-miner.service`
+To change settings:
+
+- Edit the env file on the Pi: `sudo nano /etc/solar-miner.env`, then `sudo systemctl restart solar-miner.service`
 - Or export variables before running manually: `MINER_HOSTS=miner1,miner2 node index.js`
 
 ### Environment Variables

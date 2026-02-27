@@ -11,20 +11,8 @@ ExecStart=/usr/local/bin/node index.js
 Restart=always
 RestartSec=10
 
-# REQUIRED — set the miner password
-Environment=MINER_PASSWORD=%*eHNJ2d%gtd^RJl
-
-# Optional env var overrides — uncomment and edit as needed
-# Environment=BATTERY_JSON=/tmp/battery_data.json
-# Environment=MINER_HOSTS=miner1,miner2
-# Environment=MINER_POWER_TARGET_W=800
-# Environment=MINER_MAX_POWER_TARGET_W=1200
-# Environment=START_MINING_SOC=95
-# Environment=STOP_MINING_SOC=92
-# Environment=POLL_INTERVAL_MS=30000
-# Environment=MIN_CHARGE_CURRENT_A=2.0
-# Environment=CURRENT_WINDOW_SIZE=6
-# Environment=BATTERIES_FULL_SOC=99
+# Site-specific config lives in /etc/solar-miner.env (not in repo)
+EnvironmentFile=/etc/solar-miner.env
 
 [Install]
 WantedBy=multi-user.target
