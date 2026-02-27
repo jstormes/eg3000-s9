@@ -16,7 +16,9 @@ function recordCurrent(amps) {
   }
 }
 
-function isChargingSustained() {
+function isChargingSustained(soc) {
+  // Batteries full — skip charge check, solar has nowhere to go
+  if (soc >= config.thresholds.batteriesFullSOC) return true;
   if (currentHistory.length < config.thresholds.currentWindowSize) return false;
   const avg = currentHistory.reduce((sum, v) => sum + v, 0) / currentHistory.length;
   return avg >= config.thresholds.minChargeCurrentA;
@@ -97,7 +99,7 @@ async function controlLoop() {
     `[control] Poll interval: ${config.pollIntervalMs / 1000}s`
   );
   console.log(
-    `[control] Charge check: avg current >= ${config.thresholds.minChargeCurrentA}A over ${config.thresholds.currentWindowSize} readings`
+    `[control] Charge check: avg current >= ${config.thresholds.minChargeCurrentA}A over ${config.thresholds.currentWindowSize} readings (skip at SOC >= ${config.thresholds.batteriesFullSOC}%)`
   );
 
   while (running) {
@@ -138,10 +140,12 @@ async function controlLoop() {
       );
 
       if (state === STATES.IDLE && soc >= config.thresholds.startMiningSOC) {
-        if (isChargingSustained()) {
-          const avg = (currentHistory.reduce((s, v) => s + v, 0) / currentHistory.length).toFixed(1);
+        if (isChargingSustained(soc)) {
+          const reason = soc >= config.thresholds.batteriesFullSOC
+            ? `batteries full (SOC ${soc}% >= ${config.thresholds.batteriesFullSOC}%)`
+            : `avg current ${(currentHistory.reduce((s, v) => s + v, 0) / currentHistory.length).toFixed(1)}A >= ${config.thresholds.minChargeCurrentA}A`;
           console.log(
-            `[control] SOC ${soc}% >= ${config.thresholds.startMiningSOC}% & avg current ${avg}A >= ${config.thresholds.minChargeCurrentA}A — starting miners`
+            `[control] SOC ${soc}% >= ${config.thresholds.startMiningSOC}% & ${reason} — starting miners`
           );
           await startAllMiners();
           state = STATES.MINING;

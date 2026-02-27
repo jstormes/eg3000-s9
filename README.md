@@ -101,6 +101,7 @@ All settings are controlled via environment variables with sensible defaults. To
 | `STOP_MINING_SOC` | `92` | Battery SOC % below which mining stops |
 | `MIN_CHARGE_CURRENT_A` | `2.0` | Minimum average charging current (amps) required to start miners |
 | `CURRENT_WINDOW_SIZE` | `6` | Number of readings to average for the charge check (6 = 3 min at 30s poll) |
+| `BATTERIES_FULL_SOC` | `99` | SOC % at which batteries are considered full (skips charge current check) |
 | `POLL_INTERVAL_MS` | `30000` | How often to check battery SOC (milliseconds) |
 
 ### Adding a Second Miner
@@ -140,8 +141,10 @@ In addition to SOC thresholds, the controller checks that the battery is activel
 
 A rolling window of recent battery current readings is averaged. Miners only start when:
 
-1. SOC >= `START_MINING_SOC` (default 95%)
+1. SOC >= `START_MINING_SOC` (default 95%), **and**
 2. The average current over the last `CURRENT_WINDOW_SIZE` readings (default 6 = 3 minutes) is >= `MIN_CHARGE_CURRENT_A` (default 2.0A)
+
+**Batteries-full override**: When SOC >= `BATTERIES_FULL_SOC` (default 99%), the charge current check is skipped entirely. At full charge, current naturally drops to ~0A even with strong solar production — the batteries simply can't absorb more. Mining should start immediately in this case since excess solar has nowhere to go.
 
 This also filters out brief cloud cover — a passing cloud may cause a momentary dip in current, but the 3-minute average smooths it out. If the average stays above the threshold, miners start. If clouds persist and average current drops, the controller waits.
 

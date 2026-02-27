@@ -14,6 +14,7 @@ const config = {
     stopMiningSOC: parseInt(process.env.STOP_MINING_SOC, 10) || 92,
     minChargeCurrentA: parseFloat(process.env.MIN_CHARGE_CURRENT_A) || 2.0,
     currentWindowSize: parseInt(process.env.CURRENT_WINDOW_SIZE, 10) || 6,
+    batteriesFullSOC: parseInt(process.env.BATTERIES_FULL_SOC, 10) || 99,
   },
   pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS, 10) || 30000,
 };
