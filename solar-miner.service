@@ -22,6 +22,8 @@ Environment=MINER_PASSWORD=changeme
 # Environment=START_MINING_SOC=95
 # Environment=STOP_MINING_SOC=92
 # Environment=POLL_INTERVAL_MS=30000
+# Environment=MIN_CHARGE_CURRENT_A=2.0
+# Environment=CURRENT_WINDOW_SIZE=6
 
 [Install]
 WantedBy=multi-user.target

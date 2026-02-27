@@ -77,6 +77,7 @@ Expected output:
 [control] Miners: miner1
 [control] Power target: 800W per miner (max 1200W)
 [control] Poll interval: 30s
+[control] Charge check: avg current >= 2A over 6 readings
 [2026-02-22T00:29:43.568Z] SOC: 99% | State: IDLE | Miners: 1 | 54.05V | 0A | 25°C
 ```
 
@@ -98,6 +99,8 @@ All settings are controlled via environment variables with sensible defaults. To
 | `MINER_MAX_POWER_TARGET_W` | `1200` | Hard cap on power target per miner (APW3++ limit at 120V) |
 | `START_MINING_SOC` | `95` | Battery SOC % at or above which mining starts |
 | `STOP_MINING_SOC` | `92` | Battery SOC % below which mining stops |
+| `MIN_CHARGE_CURRENT_A` | `2.0` | Minimum average charging current (amps) required to start miners |
+| `CURRENT_WINDOW_SIZE` | `6` | Number of readings to average for the charge check (6 = 3 min at 30s poll) |
 | `POLL_INTERVAL_MS` | `30000` | How often to check battery SOC (milliseconds) |
 
 ### Adding a Second Miner
@@ -130,6 +133,19 @@ The controller is designed to protect batteries from over-discharge:
 - **Stop retries**: When stopping miners, the controller retries up to 3 times with 5-second delays. Stopping is safety-critical — a single network glitch shouldn't leave miners running.
 - **Clean shutdown**: On SIGINT/SIGTERM, miners are stopped before the controller exits.
 - **Default state is off**: The controller starts in IDLE state. Miners only start when battery SOC is confirmed above the start threshold.
+
+### Load-Aware Start (Cloud Filtering)
+
+In addition to SOC thresholds, the controller checks that the battery is actively charging before starting miners. This prevents tripping breakers when household loads are drawing significant power (e.g., HVAC, appliances) even though SOC is high.
+
+A rolling window of recent battery current readings is averaged. Miners only start when:
+
+1. SOC >= `START_MINING_SOC` (default 95%)
+2. The average current over the last `CURRENT_WINDOW_SIZE` readings (default 6 = 3 minutes) is >= `MIN_CHARGE_CURRENT_A` (default 2.0A)
+
+This also filters out brief cloud cover — a passing cloud may cause a momentary dip in current, but the 3-minute average smooths it out. If the average stays above the threshold, miners start. If clouds persist and average current drops, the controller waits.
+
+Stopping miners still uses SOC alone — once SOC drops below `STOP_MINING_SOC`, miners stop immediately regardless of current.
 
 ### SOC Threshold Strategy
 

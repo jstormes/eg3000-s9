@@ -7,6 +7,20 @@ let state = STATES.IDLE;
 let running = true;
 let consecutiveErrors = 0;
 const MAX_CONSECUTIVE_ERRORS = 3;
+const currentHistory = [];
+
+function recordCurrent(amps) {
+  currentHistory.push(amps);
+  while (currentHistory.length > config.thresholds.currentWindowSize) {
+    currentHistory.shift();
+  }
+}
+
+function isChargingSustained() {
+  if (currentHistory.length < config.thresholds.currentWindowSize) return false;
+  const avg = currentHistory.reduce((sum, v) => sum + v, 0) / currentHistory.length;
+  return avg >= config.thresholds.minChargeCurrentA;
+}
 
 if (!config.miners.password) {
   console.error('[control] MINER_PASSWORD environment variable is required');
@@ -82,11 +96,18 @@ async function controlLoop() {
   console.log(
     `[control] Poll interval: ${config.pollIntervalMs / 1000}s`
   );
+  console.log(
+    `[control] Charge check: avg current >= ${config.thresholds.minChargeCurrentA}A over ${config.thresholds.currentWindowSize} readings`
+  );
 
   while (running) {
     try {
       const { soc, batteryVoltage, batteryCurrent, temperature, pvPower } = await readSOC();
       consecutiveErrors = 0;
+
+      if (batteryCurrent !== null) {
+        recordCurrent(batteryCurrent);
+      }
 
       // Check actual miner state — don't trust internal state alone
       let minersRunning;
@@ -117,11 +138,21 @@ async function controlLoop() {
       );
 
       if (state === STATES.IDLE && soc >= config.thresholds.startMiningSOC) {
-        console.log(
-          `[control] SOC ${soc}% >= ${config.thresholds.startMiningSOC}% — starting miners`
-        );
-        await startAllMiners();
-        state = STATES.MINING;
+        if (isChargingSustained()) {
+          const avg = (currentHistory.reduce((s, v) => s + v, 0) / currentHistory.length).toFixed(1);
+          console.log(
+            `[control] SOC ${soc}% >= ${config.thresholds.startMiningSOC}% & avg current ${avg}A >= ${config.thresholds.minChargeCurrentA}A — starting miners`
+          );
+          await startAllMiners();
+          state = STATES.MINING;
+        } else {
+          const avg = currentHistory.length > 0
+            ? (currentHistory.reduce((s, v) => s + v, 0) / currentHistory.length).toFixed(1)
+            : 'n/a';
+          console.log(
+            `[control] SOC ${soc}% >= ${config.thresholds.startMiningSOC}% but waiting for sustained charge (avg ${avg}A, need >= ${config.thresholds.minChargeCurrentA}A over ${config.thresholds.currentWindowSize} readings, have ${currentHistory.length})`
+          );
+        }
       } else if (
         state === STATES.MINING &&
         soc < config.thresholds.stopMiningSOC
